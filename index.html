@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>Pesquisa Renova Be</title>
 
+  <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-WG5TKP744Z"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
+
     gtag('js', new Date());
     gtag('config', 'G-WG5TKP744Z');
 
+    // Dados do formulário
     let formData = {
       timestamp: '',
       currentQuestion: 0,
@@ -23,29 +26,61 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
+    // Função LIMPA para mobile - SEM verificação de campos obrigatórios
     function sendToGoogleSheets(data) {
       console.log('🔄 Enviando dados para Google Sheets:', data);
-
+      
+      // MÉTODO PRINCIPAL - Formulário com iframe (funciona em mobile)
       try {
-        // Usando fetch para enviar os dados diretamente
-        fetch('https://script.google.com/macros/s/AKfycbxa2qInGxGK94wzcdHUcqv4IRvRr1QqXUHHtQk_PeHA-nk8Vx4GMBfwNCBVbJh80XSH8Q/exec', {
-          method: 'POST',
-          body: new URLSearchParams({
-            data: JSON.stringify(data) // Enviando os dados como JSON
-          }),
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+        console.log('🔄 Criando formulário temporário...');
+        
+        // Criar um formulário temporário
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://script.google.com/macros/s/AKfycbxa2qInGxGK94wzcdHUcqv4IRvRr1QqXUHHtQk_PeHA-nk8Vx4GMBfwNCBVbJh80XSH8Q/exec';
+        form.target = 'hidden-iframe';
+        form.style.display = 'none';
+        
+        // Adicionar dados como campo hidden
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'data';
+        dataInput.value = JSON.stringify(data);
+        form.appendChild(dataInput);
+        
+        console.log('📤 Dados JSON preparados:', dataInput.value);
+        
+        // Adicionar formulário ao DOM
+        document.body.appendChild(form);
+        
+        // Criar iframe oculto para receber resposta
+        const iframe = document.createElement('iframe');
+        iframe.name = 'hidden-iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        console.log('🚀 Enviando formulário...');
+        
+        // Enviar formulário
+        form.submit();
+        
+        console.log('✅ Formulário enviado com sucesso');
+        
+        // Mostrar notificação de sucesso
+        showNotification('Dados salvos com sucesso!', 'success');
+        
+        // Limpar formulário após envio
+        setTimeout(() => {
+          if (document.body.contains(form)) {
+            document.body.removeChild(form);
+            console.log('🧹 Formulário removido do DOM');
           }
-        })
-        .then(response => response.json())
-        .then(result => {
-          console.log('✅ Dados enviados com sucesso:', result);
-          showNotification('Dados salvos com sucesso!', 'success');
-        })
-        .catch(error => {
-          console.error('❌ Erro ao enviar dados:', error);
-          showNotification('Erro ao enviar dados. Tente novamente.', 'error');
-        });
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+            console.log('🧹 Iframe removido do DOM');
+          }
+        }, 8000);
+        
       } catch (error) {
         console.error('❌ Erro ao enviar dados:', error);
         showNotification('Erro ao enviar dados. Tente novamente.', 'error');
@@ -80,12 +115,42 @@
       }, 10000);
     }
 
+    // Função para mostrar agradecimento
+    function showThankYou() {
+      console.log('🎉 Mostrando agradecimento...');
+      
+      // Esconder o formulário
+      const formContainer = document.querySelector('.form-container');
+      if (formContainer) {
+        formContainer.style.display = 'none';
+        console.log('✅ Formulário escondido');
+      }
+      
+      // Mostrar agradecimento
+      const thankYou = document.getElementById('thankYou');
+      if (thankYou) {
+        thankYou.style.display = 'block';
+        console.log('✅ Agradecimento mostrado');
+      }
+      
+      // Mudar o título da página
+      const title = document.querySelector('h1');
+      if (title) {
+        title.textContent = 'Obrigada pela participação! 💖';
+        console.log('✅ Título alterado');
+      }
+      
+      console.log('✅ Agradecimento exibido com sucesso');
+    }
+
     window.onload = () => {
+      // Evento: formulário aberto
       gtag('event', 'form_aberto', {
         form_name: 'PESQUISA_RENOVA_BE',
         session_id: formData.sessionId
       });
 
+      // Evento: formulário carregado
       gtag('event', 'form_carregado', {
         form_name: 'PESQUISA_RENOVA_BE',
         session_id: formData.sessionId
@@ -93,170 +158,12 @@
 
       console.log('📊 Formulário carregado e rastreamento ativo');
     };
-
-    let currentQuestion = 1;
-    const totalQuestions = 10;
-    const answers = {};
-
-    function updateProgress() {
-      const progress = (currentQuestion / totalQuestions) * 100;
-      document.getElementById('progressFill').style.width = progress + '%';
-    }
-
-    function showQuestion(questionNumber) {
-      document.querySelectorAll('.question').forEach(q => {
-        q.classList.remove('active');
-      });
-
-      const question = document.querySelector(`[data-question="${questionNumber}"]`);
-      if (question) {
-        question.classList.add('active');
-      }
-
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-
-      prevBtn.style.display = questionNumber === 1 ? 'none' : 'block';
-      nextBtn.textContent = questionNumber === totalQuestions ? 'Enviar' : 'Próximo';
-
-      updateProgress();
-    }
-
-    function getQuestionText(questionNumber) {
-      const questionMap = {
-        1: "Nome",
-        2: "Email",
-        3: "Confirmação Whatsapp",
-        4: "Qual é o seu gênero?",
-        5: "Qual é sua faixa etária?",
-        6: "Em quais desses perfis você se enquadra atualmente?",
-        7: "Quais produtos você mais se interessa na Renova Be",
-        8: "Quais foram os motivos que fizeram você cancelar sua assinatura da Renova Be?",
-        9: "Quais sugestões você recomendaria à Renova Be que faria você repensar em retomar sua assinatura?",
-        10: "Em uma escala de 1 a 5, o quanto você recomendaria a Renova Be para seus familiares e amigos?"
-      };
-      return questionMap[questionNumber] || "";
-    }
-
-    function getCurrentAnswer() {
-      const currentQuestionEl = document.querySelector(`[data-question="${currentQuestion}"]`);
-      
-      if (currentQuestionEl.querySelector('.text-input')) {
-        return currentQuestionEl.querySelector('.text-input').value;
-      } else if (currentQuestionEl.querySelector('textarea')) {
-        return currentQuestionEl.querySelector('textarea').value;
-      } else {
-        const selectedOption = currentQuestionEl.querySelector('.option.selected');
-        return selectedOption ? selectedOption.dataset.value : null;
-      }
-    }
-
-    function nextQuestion() {
-      const currentAnswer = getCurrentAnswer();
-      
-      if (currentAnswer) {
-        answers[`question_${currentQuestion}`] = {
-          question: getQuestionText(currentQuestion),
-          answer: currentAnswer
-        };
-
-        gtag('event', 'form_resposta_enviada', {
-          form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
-          pergunta_texto: getQuestionText(currentQuestion),
-          resposta: currentAnswer,
-          session_id: formData.sessionId
-        });
-
-        formData.answers[`question_${currentQuestion}`] = {
-          question: getQuestionText(currentQuestion),
-          answer: currentAnswer
-        };
-      }
-
-      if (currentQuestion < totalQuestions) {
-        currentQuestion++;
-        showQuestion(currentQuestion);
-
-        gtag('event', 'form_pergunta_iniciada', {
-          form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
-          pergunta_texto: getQuestionText(currentQuestion),
-          session_id: formData.sessionId
-        });
-      } else {
-        gtag('event', 'form_completado', {
-          form_name: 'PESQUISA_RENOVA_BE',
-          session_id: formData.sessionId,
-          total_perguntas: totalQuestions
-        });
-
-        formData.answers = answers;
-        formData.currentQuestion = totalQuestions;
-        formData.timestamp = new Date().toISOString();
-        
-        console.log('📤 Enviando dados completos:', formData);
-        sendToGoogleSheets(formData);
-
-        setTimeout(() => {
-          showThankYou();
-        }, 3000); // Aumentado para 3 segundos para garantir que os dados foram enviados
-      }
-    }
-
-    function previousQuestion() {
-      if (currentQuestion > 1) {
-        currentQuestion--;
-        showQuestion(currentQuestion);
-
-        gtag('event', 'form_pergunta_iniciada', {
-          form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
-          pergunta_texto: getQuestionText(currentQuestion),
-          session_id: formData.sessionId
-        });
-      }
-    }
-
-    function showThankYou() {
-      const formContainer = document.querySelector('.form-container');
-      if (formContainer) {
-        formContainer.style.display = 'none';
-      }
-      const thankYou = document.getElementById('thankYou');
-      if (thankYou) {
-        thankYou.style.display = 'block';
-      }
-      const title = document.querySelector('h1');
-      if (title) {
-        title.textContent = 'Obrigada pela participação! 💖';
-      }
-    }
-
-    document.addEventListener('click', function(e) {
-      if (e.target.classList.contains('option')) {
-        e.target.parentElement.querySelectorAll('.option').forEach(opt => {
-          opt.classList.remove('selected');
-        });
-
-        e.target.classList.add('selected');
-      }
-    });
-
-    document.addEventListener('input', function(e) {
-      if (e.target.classList.contains('text-input')) {
-        gtag('event', 'form_digitacao', {
-          form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
-          pergunta_texto: getQuestionText(currentQuestion),
-          session_id: formData.sessionId
-        });
-      }
-    });
   </script>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -313,6 +220,13 @@
       background: #f9f9f9;
       border-radius: 8px;
       border-left: 4px solid #d61392;
+    }
+
+    .welcome-message p {
+      margin: 0 0 10px 0;
+      line-height: 1.6;
+      color: #333;
+      font-size: 14px;
     }
 
     .question {
@@ -581,6 +495,7 @@
     }
   </style>
 </head>
+
 <body>
   <header>
     <img src="https://i.ibb.co/chSdvTzv/Captura-de-tela-2025-08-07-092118.png" alt="Renova Be" />
@@ -860,5 +775,189 @@
       <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">Próximo</button>
     </div>
   </div>
+
+  <script>
+    let currentQuestion = 1;
+    const totalQuestions = 10;
+    const answers = {};
+
+    // Inicializar rastreamento da primeira pergunta
+    window.onload = function() {
+      // Apenas rastrear no Google Analytics (sem enviar dados)
+      gtag('event', 'form_pergunta_iniciada', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        pergunta_numero: 1,
+        pergunta_texto: "Nome",
+        session_id: formData.sessionId
+      });
+      updateProgress();
+    };
+
+    function updateProgress() {
+      const progress = (currentQuestion / totalQuestions) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+    }
+
+    function showQuestion(questionNumber) {
+      // Esconder todas as perguntas
+      document.querySelectorAll('.question').forEach(q => {
+        q.classList.remove('active');
+      });
+
+      // Mostrar pergunta atual
+      const question = document.querySelector(`[data-question="${questionNumber}"]`);
+      if (question) {
+        question.classList.add('active');
+      }
+
+      // Atualizar botões
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+
+      prevBtn.style.display = questionNumber === 1 ? 'none' : 'block';
+      nextBtn.textContent = questionNumber === totalQuestions ? 'Enviar' : 'Próximo';
+
+      updateProgress();
+    }
+
+    function getQuestionText(questionNumber) {
+      const questionMap = {
+        1: "Nome",
+        2: "Email",
+        3: "Confirmação Whatsapp",
+        4: "Qual é o seu gênero?",
+        5: "Qual é sua faixa etária?",
+        6: "Em quais desses perfis você se enquadra atualmente?",
+        7: "Quais produtos você mais se interessa na Renova Be",
+        8: "Quais foram os motivos que fizeram você cancelar sua assinatura da Renova Be?",
+        9: "Quais sugestões você recomendaria à Renova Be que faria você repensar em retomar sua assinatura?",
+        10: "Em uma escala de 1 a 5, o quanto você recomendaria a Renova Be para seus familiares e amigos?"
+      };
+      return questionMap[questionNumber] || "";
+    }
+
+    function getCurrentAnswer() {
+      const currentQuestionEl = document.querySelector(`[data-question="${currentQuestion}"]`);
+      
+      if (currentQuestionEl.querySelector('.text-input')) {
+        return currentQuestionEl.querySelector('.text-input').value;
+      } else if (currentQuestionEl.querySelector('textarea')) {
+        return currentQuestionEl.querySelector('textarea').value;
+      } else {
+        const selectedOption = currentQuestionEl.querySelector('.option.selected');
+        return selectedOption ? selectedOption.dataset.value : null;
+      }
+    }
+
+    function nextQuestion() {
+      const currentAnswer = getCurrentAnswer();
+      
+      if (currentAnswer) {
+        answers[`question_${currentQuestion}`] = {
+          question: getQuestionText(currentQuestion),
+          answer: currentAnswer
+        };
+
+        // Rastrear resposta no Analytics
+        gtag('event', 'form_resposta_enviada', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          resposta: currentAnswer,
+          session_id: formData.sessionId
+        });
+
+        // Atualizar dados do formulário
+        formData.answers[`question_${currentQuestion}`] = {
+          question: getQuestionText(currentQuestion),
+          answer: currentAnswer
+        };
+      }
+
+      if (currentQuestion < totalQuestions) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+        
+        // Rastrear nova pergunta (sem enviar dados)
+        gtag('event', 'form_pergunta_iniciada', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          session_id: formData.sessionId
+        });
+      } else {
+        // Formulário completo - ENVIAR DADOS COMPLETOS
+        gtag('event', 'form_completado', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          session_id: formData.sessionId,
+          total_perguntas: totalQuestions
+        });
+
+        // Enviar dados finais completos para Google Sheets
+        formData.answers = answers;
+        formData.currentQuestion = totalQuestions;
+        formData.timestamp = new Date().toISOString();
+        
+        console.log('📤 Enviando dados completos:', formData);
+        sendToGoogleSheets(formData);
+
+        // Mostrar agradecimento APÓS enviar dados
+        setTimeout(() => {
+          showThankYou();
+        }, 3000); // Aumentado para 3 segundos para garantir que os dados foram enviados
+      }
+    }
+
+    function previousQuestion() {
+      if (currentQuestion > 1) {
+        currentQuestion--;
+        showQuestion(currentQuestion);
+        
+        // Rastrear retorno à pergunta (sem enviar dados)
+        gtag('event', 'form_pergunta_iniciada', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          session_id: formData.sessionId
+        });
+      }
+    }
+
+    // Event listeners para opções
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('option')) {
+        // Remover seleção anterior
+        e.target.parentElement.querySelectorAll('.option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        
+        // Selecionar nova opção
+        e.target.classList.add('selected');
+      }
+    });
+
+    // Event listeners para inputs
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('text-input')) {
+        // Rastrear digitação em tempo real
+        gtag('event', 'form_digitacao', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          session_id: formData.sessionId
+        });
+      }
+    });
+
+    // Rastrear saída da página
+    window.addEventListener('beforeunload', function() {
+      gtag('event', 'form_abandonado', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        pergunta_atual: currentQuestion,
+        pergunta_texto: getQuestionText(currentQuestion),
+        session_id: formData.sessionId
+      });
+    });
+  </script>
 </body>
-</html>
+</html> 
