@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>Pesquisa Renova Be</title>
 
   <!-- Google Analytics 4 -->
@@ -26,7 +26,7 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Função corrigida para enviar dados completos
+    // Função corrigida para enviar dados completos - FUNCIONA NO MOBILE
     function sendToGoogleSheets(data) {
       console.log('🔄 Enviando dados para Google Sheets:', data);
       
@@ -36,38 +36,76 @@
         return;
       }
       
-      // Criar um formulário temporário
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec';
-      form.target = 'hidden-iframe';
-      form.style.display = 'none';
-      
-      // Adicionar dados como campo hidden
-      const dataInput = document.createElement('input');
-      dataInput.type = 'hidden';
-      dataInput.name = 'data';
-      dataInput.value = JSON.stringify(data);
-      form.appendChild(dataInput);
-      
-      // Adicionar formulário ao DOM
-      document.body.appendChild(form);
-      
-      // Criar iframe oculto para receber resposta
-      const iframe = document.createElement('iframe');
-      iframe.name = 'hidden-iframe';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-      
-      // Enviar formulário
-      form.submit();
-      
-      // Limpar formulário após envio
-      setTimeout(() => {
-        document.body.removeChild(form);
-        document.body.removeChild(iframe);
-        showNotification('Dados enviados com sucesso!', 'success');
-      }, 1000);
+      // Método que funciona tanto no desktop quanto no mobile
+      try {
+        // Criar um formulário temporário
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec';
+        form.target = 'hidden-iframe';
+        form.style.display = 'none';
+        
+        // Adicionar dados como campo hidden
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'data';
+        dataInput.value = JSON.stringify(data);
+        form.appendChild(dataInput);
+        
+        // Adicionar formulário ao DOM
+        document.body.appendChild(form);
+        
+        // Criar iframe oculto para receber resposta
+        const iframe = document.createElement('iframe');
+        iframe.name = 'hidden-iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        // Enviar formulário
+        form.submit();
+        
+        // Limpar formulário após envio
+        setTimeout(() => {
+          if (document.body.contains(form)) {
+            document.body.removeChild(form);
+          }
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+          showNotification('Dados enviados com sucesso!', 'success');
+        }, 3000); // Aumentado para mobile
+        
+      } catch (error) {
+        console.error('❌ Erro ao enviar dados:', error);
+        
+        // Fallback para mobile - tentar com XMLHttpRequest
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec', true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          
+          const formData = new FormData();
+          formData.append('data', JSON.stringify(data));
+          
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              showNotification('Dados enviados com sucesso!', 'success');
+            } else {
+              showNotification('Erro ao enviar dados. Tente novamente.', 'error');
+            }
+          };
+          
+          xhr.onerror = function() {
+            showNotification('Erro de conexão. Tente novamente.', 'error');
+          };
+          
+          xhr.send(formData);
+          
+        } catch (fallbackError) {
+          console.error('❌ Erro no fallback:', fallbackError);
+          showNotification('Erro ao enviar dados. Tente novamente.', 'error');
+        }
+      }
     }
 
     function showNotification(message, type) {
@@ -76,22 +114,27 @@
         position: fixed;
         top: 20px;
         right: 20px;
+        left: 20px;
         padding: 15px 20px;
-        border-radius: 5px;
+        border-radius: 8px;
         color: white;
         font-weight: bold;
         z-index: 1000;
         background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+        max-width: 100%;
+        word-wrap: break-word;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
       notification.textContent = message;
       document.body.appendChild(notification);
       
       setTimeout(() => {
-        notification.remove();
-      }, 3000);
+        if (document.body.contains(notification)) {
+          notification.remove();
+        }
+      }, 5000);
     }
-
-    // Função removida - não envia dados durante o preenchimento
 
     window.onload = () => {
       // Evento: formulário aberto
@@ -111,10 +154,14 @@
   </script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #ffffff;
       color: #222222;
       display: flex;
@@ -122,54 +169,61 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
     header {
       width: 100%;
       background-color: #000;
-      padding: 20px 0;
+      padding: 15px 0;
       text-align: center;
     }
 
     header img {
-      height: 60px;
+      height: 50px;
+      max-width: 100%;
     }
 
     h1 {
       color: #d61392;
-      margin: 20px 0;
-      font-size: 26px;
+      margin: 15px 0;
+      font-size: 22px;
       text-align: center;
+      padding: 0 15px;
+      line-height: 1.3;
     }
 
     .form-container {
       width: 100%;
-      max-width: 800px;
-      padding: 20px;
+      max-width: 600px;
+      padding: 15px;
       background: #fff;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin: 20px;
+      margin: 10px;
+      overflow: hidden;
     }
 
     .welcome-message {
       text-align: center;
-      margin-bottom: 30px;
-      padding: 20px;
+      margin-bottom: 25px;
+      padding: 20px 15px;
       background: #f9f9f9;
       border-radius: 8px;
       border-left: 4px solid #d61392;
     }
 
     .welcome-message p {
-      margin: 0;
+      margin: 0 0 10px 0;
       line-height: 1.6;
       color: #333;
+      font-size: 14px;
     }
 
     .question {
       display: none;
       animation: fadeIn 0.5s ease-in;
+      padding: 0 5px;
     }
 
     .question.active {
@@ -184,17 +238,19 @@
     .question h3 {
       color: #d61392;
       margin-bottom: 20px;
-      font-size: 20px;
+      font-size: 18px;
+      line-height: 1.4;
+      padding: 0 5px;
     }
 
     .options {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 12px;
     }
 
     .option {
-      padding: 15px;
+      padding: 15px 12px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       cursor: pointer;
@@ -202,20 +258,23 @@
       background: #f9f9f9;
       display: flex;
       align-items: center;
+      min-height: 60px;
+      word-wrap: break-word;
     }
 
     .option-number {
       background: #d61392;
       color: white;
-      width: 30px;
-      height: 30px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      margin-right: 15px;
+      margin-right: 12px;
       flex-shrink: 0;
+      font-size: 14px;
     }
 
     .option:hover {
@@ -228,13 +287,21 @@
       background: #fff5f9;
     }
 
+    .option span {
+      font-size: 14px;
+      line-height: 1.4;
+      flex: 1;
+    }
+
     .text-input {
       width: 100%;
-      padding: 15px;
+      padding: 15px 12px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 16px;
       transition: border-color 0.3s ease;
+      box-sizing: border-box;
+      font-family: inherit;
     }
 
     .text-input:focus {
@@ -245,18 +312,23 @@
     .navigation {
       display: flex;
       justify-content: space-between;
-      margin-top: 30px;
+      margin-top: 25px;
       padding-top: 20px;
       border-top: 1px solid #e0e0e0;
+      gap: 10px;
     }
 
     .btn {
-      padding: 12px 25px;
+      padding: 15px 20px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-size: 16px;
       transition: all 0.3s ease;
+      min-width: 100px;
+      font-weight: 500;
+      flex: 1;
+      max-width: 150px;
     }
 
     .btn-prev {
@@ -272,6 +344,10 @@
     .btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
     }
 
     .progress-bar {
@@ -291,27 +367,120 @@
 
     .thank-you {
       text-align: center;
-      padding: 40px;
+      padding: 40px 20px;
       display: none;
     }
 
     .thank-you h2 {
       color: #d61392;
       margin-bottom: 20px;
+      font-size: 24px;
+      line-height: 1.3;
     }
 
-    @media (max-width: 768px) {
+    .thank-you p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .thank-you strong {
+      color: #d61392;
+      font-size: 18px;
+    }
+
+    /* Responsividade aprimorada */
+    @media (max-width: 480px) {
       .form-container {
-        margin: 10px;
-        padding: 15px;
+        margin: 5px;
+        padding: 12px;
       }
       
       .question h3 {
-        font-size: 18px;
+        font-size: 16px;
+        margin-bottom: 15px;
       }
       
       .option {
-        padding: 12px;
+        padding: 12px 10px;
+        min-height: 50px;
+      }
+
+      .option span {
+        font-size: 13px;
+      }
+
+      .option-number {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        margin-right: 10px;
+      }
+
+      .btn {
+        padding: 12px 15px;
+        font-size: 14px;
+        min-width: 80px;
+      }
+
+      .text-input {
+        padding: 12px 10px;
+        font-size: 16px;
+      }
+
+      .welcome-message {
+        padding: 15px 12px;
+      }
+
+      .welcome-message p {
+        font-size: 13px;
+      }
+
+      .thank-you {
+        padding: 30px 15px;
+      }
+
+      .thank-you h2 {
+        font-size: 20px;
+      }
+
+      .thank-you p {
+        font-size: 14px;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin: 10px 0;
+      }
+
+      header {
+        padding: 10px 0;
+      }
+
+      header img {
+        height: 40px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .form-container {
+        margin: 2px;
+        padding: 10px;
+      }
+      
+      .option {
+        padding: 10px 8px;
+        min-height: 45px;
+      }
+
+      .option span {
+        font-size: 12px;
+      }
+
+      .btn {
+        padding: 10px 12px;
+        font-size: 13px;
       }
     }
   </style>
@@ -586,8 +755,9 @@
 
     <!-- Agradecimento -->
     <div class="thank-you" id="thankYou">
-      <h2>Obrigado pela sua participação! 🎉</h2>
+      <h2>Obrigada pela participação! 💖</h2>
       <p>Sua opinião é muito importante para nós. Entraremos em contato em breve!</p>
+      <p><strong>Atenciosamente,<br>Equipe Renova Be</strong></p>
     </div>
 
     <div class="navigation">
@@ -779,4 +949,4 @@
     });
   </script>
 </body>
-</html> 
+</html>
