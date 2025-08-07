@@ -26,19 +26,18 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Função CORRIGIDA para mobile - garante que dados cheguem no Sheets
+    // Função LIMPA para mobile - SEM verificação de campos obrigatórios
     function sendToGoogleSheets(data) {
       console.log('🔄 Enviando dados para Google Sheets:', data);
       
       // MÉTODO PRINCIPAL - Formulário com iframe (funciona em mobile)
       try {
-      
-      console.log('🔄 Criando formulário temporário...');
+        console.log('🔄 Criando formulário temporário...');
         
         // Criar um formulário temporário
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = 'https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec';
+        form.action = 'https://script.google.com/macros/s/AKfycbxa2qInGxGK94wzcdHUcqv4IRvRr1QqXUHHtQk_PeHA-nk8Vx4GMBfwNCBVbJh80XSH8Q/exec';
         form.target = 'hidden-iframe';
         form.style.display = 'none';
         
@@ -67,10 +66,10 @@
         
         console.log('✅ Formulário enviado com sucesso');
         
-        // Mostrar notificação de sucesso CORRIGIDA
+        // Mostrar notificação de sucesso
         showNotification('Dados salvos com sucesso!', 'success');
         
-        // Limpar formulário após envio (aumentado para mobile)
+        // Limpar formulário após envio
         setTimeout(() => {
           if (document.body.contains(form)) {
             document.body.removeChild(form);
@@ -80,60 +79,11 @@
             document.body.removeChild(iframe);
             console.log('🧹 Iframe removido do DOM');
           }
-        }, 8000); // Aumentado para 8 segundos para mobile
+        }, 8000);
         
       } catch (error) {
         console.error('❌ Erro ao enviar dados:', error);
-        
-        // FALLBACK 1 - XMLHttpRequest
-        console.log('🔄 Tentando fallback XMLHttpRequest...');
-        
-        try {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec', true);
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-          
-          const formData = new FormData();
-          formData.append('data', JSON.stringify(data));
-          
-          xhr.onload = function() {
-            console.log('📥 Resposta XMLHttpRequest:', xhr.responseText);
-            if (xhr.status === 200) {
-              showNotification('Dados salvos com sucesso! (XMLHttpRequest)', 'success');
-            } else {
-              showNotification('Erro ao enviar dados. Status: ' + xhr.status, 'error');
-            }
-          };
-          
-          xhr.onerror = function() {
-            console.error('❌ Erro XMLHttpRequest');
-            showNotification('Erro de conexão. Tente novamente.', 'error');
-          };
-          
-          xhr.send(formData);
-          
-        } catch (fallbackError) {
-          console.error('❌ Erro no fallback:', fallbackError);
-          
-          // FALLBACK 2 - Fetch com no-cors
-          console.log('🔄 Tentando fallback fetch...');
-          
-          fetch('https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec', {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'data=' + encodeURIComponent(JSON.stringify(data))
-          })
-          .then(() => {
-            showNotification('Dados salvos com sucesso! (Fetch)', 'success');
-          })
-          .catch((fetchError) => {
-            console.error('❌ Erro no fetch:', fetchError);
-            showNotification('Erro ao enviar dados. Tente novamente.', 'error');
-          });
-        }
+        showNotification('Erro ao enviar dados. Tente novamente.', 'error');
       }
     }
 
@@ -162,10 +112,10 @@
         if (document.body.contains(notification)) {
           notification.remove();
         }
-      }, 10000); // Aumentado para 10 segundos
+      }, 10000);
     }
 
-    // Função CORRIGIDA para mostrar agradecimento
+    // Função para mostrar agradecimento
     function showThankYou() {
       console.log('🎉 Mostrando agradecimento...');
       
