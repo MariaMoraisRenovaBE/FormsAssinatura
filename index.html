@@ -14,9 +14,6 @@
     gtag('js', new Date());
     gtag('config', 'G-WG5TKP744Z');
 
-    // Configuração do Google Sheets com solução alternativa
-    const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwGxxQ3023wCbkfXIA2SxUdQic0ix4xXaZgqa1jpKfEVB0UdUOgSCmbs2Jyj2zuo3oGxw/exec';
-    
     // Dados do formulário
     let formData = {
       timestamp: '',
@@ -29,32 +26,48 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Solução alternativa usando XMLHttpRequest
+    // Função corrigida para enviar dados completos
     function sendToGoogleSheets(data) {
       console.log('🔄 Enviando dados para Google Sheets:', data);
       
-      const xhr = new XMLHttpRequest();
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(data));
+      // Verificar se há dados válidos para enviar
+      if (!data.answers || Object.keys(data.answers).length === 0) {
+        console.log('⚠️ Nenhum dado válido para enviar');
+        return;
+      }
       
-      xhr.open('POST', GOOGLE_SHEETS_URL, true);
+      // Criar um formulário temporário
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://script.google.com/macros/s/AKfycbwGxxQ3023wCbkfXIA2SxUdQic0ix4xXaZgqa1jpKfEVB0UdUOgSCmbs2Jyj2zuo3oGxw/exec';
+      form.target = 'hidden-iframe';
+      form.style.display = 'none';
       
-      xhr.onload = function() {
-        if (xhr.status === 200) {
-          console.log('✅ Dados enviados para Google Sheets:', xhr.responseText);
-          showNotification('Dados enviados com sucesso!', 'success');
-        } else {
-          console.error('❌ Erro ao enviar dados:', xhr.status, xhr.responseText);
-          showNotification('Erro ao enviar dados. Status: ' + xhr.status, 'error');
-        }
-      };
+      // Adicionar dados como campo hidden
+      const dataInput = document.createElement('input');
+      dataInput.type = 'hidden';
+      dataInput.name = 'data';
+      dataInput.value = JSON.stringify(data);
+      form.appendChild(dataInput);
       
-      xhr.onerror = function() {
-        console.error('❌ Erro de rede ao enviar dados');
-        showNotification('Erro de rede ao enviar dados.', 'error');
-      };
+      // Adicionar formulário ao DOM
+      document.body.appendChild(form);
       
-      xhr.send(formData);
+      // Criar iframe oculto para receber resposta
+      const iframe = document.createElement('iframe');
+      iframe.name = 'hidden-iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      
+      // Enviar formulário
+      form.submit();
+      
+      // Limpar formulário após envio
+      setTimeout(() => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+        showNotification('Dados enviados com sucesso!', 'success');
+      }, 1000);
     }
 
     function showNotification(message, type) {
@@ -89,16 +102,13 @@
         };
       }
 
-      // Enviar para Google Analytics
+      // Apenas rastrear no Google Analytics (sem enviar para Sheets)
       gtag('event', 'form_pergunta_iniciada', {
         form_name: 'PESQUISA_RENOVA_BE',
         pergunta_numero: questionNumber,
         pergunta_texto: questionText,
         session_id: formData.sessionId
       });
-
-      // Enviar para Google Sheets
-      sendToGoogleSheets(formData);
 
       console.log(`🔔 Pergunta ${questionNumber} rastreada:`, questionText);
     }
@@ -691,30 +701,38 @@
           session_id: formData.sessionId
         });
 
-        // Enviar para Google Sheets
+        // Atualizar dados do formulário
         formData.answers[`question_${currentQuestion}`] = {
           question: getQuestionText(currentQuestion),
           answer: currentAnswer
         };
-        sendToGoogleSheets(formData);
       }
 
       if (currentQuestion < totalQuestions) {
         currentQuestion++;
         showQuestion(currentQuestion);
         
-        // Rastrear nova pergunta
-        trackQuestionProgress(currentQuestion, getQuestionText(currentQuestion));
+        // Rastrear nova pergunta (sem enviar dados)
+        gtag('event', 'form_pergunta_iniciada', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          session_id: formData.sessionId
+        });
       } else {
-        // Formulário completo
+        // Formulário completo - ENVIAR DADOS COMPLETOS
         gtag('event', 'form_completado', {
           form_name: 'PESQUISA_RENOVA_BE',
           session_id: formData.sessionId,
           total_perguntas: totalQuestions
         });
 
-        // Enviar dados finais para Google Sheets
+        // Enviar dados finais completos para Google Sheets
         formData.answers = answers;
+        formData.currentQuestion = totalQuestions;
+        formData.timestamp = new Date().toISOString();
+        
+        console.log('📤 Enviando dados completos:', formData);
         sendToGoogleSheets(formData);
 
         // Mostrar agradecimento
@@ -728,8 +746,13 @@
         currentQuestion--;
         showQuestion(currentQuestion);
         
-        // Rastrear retorno à pergunta
-        trackQuestionProgress(currentQuestion, getQuestionText(currentQuestion));
+        // Rastrear retorno à pergunta (sem enviar dados)
+        gtag('event', 'form_pergunta_iniciada', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          session_id: formData.sessionId
+        });
       }
     }
 
