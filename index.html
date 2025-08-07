@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pesquisa Renova Be</title>
+
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WG5TKP744Z"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+
+    gtag('js', new Date());
+    gtag('config', 'G-WG5TKP744Z');
+
+    // Dados do formulário
+    let formData = {
+      timestamp: '',
+      currentQuestion: 0,
+      answers: {},
+      sessionId: generateSessionId()
+    };
+
+    function generateSessionId() {
+      return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Solução alternativa usando formulário HTML tradicional
+    function sendToGoogleSheets(data) {
+      console.log('🔄 Enviando dados para Google Sheets:', data);
+      
+      // Verificar se há dados válidos para enviar
+      if (!data.answers || Object.keys(data.answers).length === 0) {
+        console.log('⚠️ Nenhum dado válido para enviar');
+        return;
+      }
+      
+      // Criar um formulário temporário
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://script.google.com/macros/s/AKfycbwGxxQ3023wCbkfXIA2SxUdQic0ix4xXaZgqa1jpKfEVB0UdUOgSCmbs2Jyj2zuo3oGxw/exec';
+      form.target = 'hidden-iframe';
+      form.style.display = 'none';
+      
+      // Adicionar dados como campo hidden
+      const dataInput = document.createElement('input');
+      dataInput.type = 'hidden';
+      dataInput.name = 'data';
+      dataInput.value = JSON.stringify(data);
+      form.appendChild(dataInput);
+      
+      // Adicionar formulário ao DOM
+      document.body.appendChild(form);
+      
+      // Criar iframe oculto para receber resposta
+      const iframe = document.createElement('iframe');
+      iframe.name = 'hidden-iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      
+      // Enviar formulário
+      form.submit();
+      
+      // Limpar formulário após envio
+      setTimeout(() => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+        showNotification('Dados enviados com sucesso!', 'success');
+      }, 1000);
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    function trackQuestionProgress(questionNumber, questionText, answer = null) {
+      formData.currentQuestion = questionNumber;
+      formData.timestamp = new Date().toISOString();
+      
+      if (answer) {
+        formData.answers[`question_${questionNumber}`] = {
+          question: questionText,
+          answer: answer
+        };
+      }
+
+      // Enviar para Google Analytics
+      gtag('event', 'form_pergunta_iniciada', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        pergunta_numero: questionNumber,
+        pergunta_texto: questionText,
+        session_id: formData.sessionId
+      });
+
+      // Enviar para Google Sheets
+      sendToGoogleSheets(formData);
+
+      console.log(`🔔 Pergunta ${questionNumber} rastreada:`, questionText);
+    }
+
+    window.onload = () => {
+      // Evento: formulário aberto
+      gtag('event', 'form_aberto', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        session_id: formData.sessionId
+      });
+
+      // Evento: formulário carregado
+      gtag('event', 'form_carregado', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        session_id: formData.sessionId
+      });
+
+      console.log('📊 Formulário carregado e rastreamento ativo');
+    };
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      color: #222222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      background-color: #000;
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    header img {
+      height: 60px;
+    }
+
+    h1 {
+      color: #d61392;
+      margin: 20px 0;
+      font-size: 26px;
+      text-align: center;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 800px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin: 20px;
+    }
+
+    .welcome-message {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border-left: 4px solid #d61392;
+    }
+
+    .welcome-message p {
+      margin: 0;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .question {
+      display: none;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .question.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .question h3 {
+      color: #d61392;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .option {
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f9f9f9;
+      display: flex;
+      align-items: center;
+    }
+
+    .option-number {
+      background: #d61392;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 15px;
+      flex-shrink: 0;
+    }
+
+    .option:hover {
+      border-color: #d61392;
+      background: #fff5f9;
+    }
+
+    .option.selected {
+      border-color: #d61392;
+      background: #fff5f9;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: #d61392;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-prev {
+      background: #f0f0f0;
+      color: #666;
+    }
+
+    .btn-next {
+      background: #d61392;
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #d61392, #ff69b4);
+      transition: width 0.3s ease;
+    }
+
+    .thank-you {
+      text-align: center;
+      padding: 40px;
+      display: none;
+    }
+
+    .thank-you h2 {
+      color: #d61392;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .form-container {
+        margin: 10px;
+        padding: 15px;
+      }
+      
+      .question h3 {
+        font-size: 18px;
+      }
+      
+      .option {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <img src="https://i.ibb.co/chSdvTzv/Captura-de-tela-2025-08-07-092118.png" alt="Renova Be" />
+  </header>
+
+  <h1>Pesquisa de Satisfação Renova Be</h1>
+
+  <div class="form-container">
+    <div class="welcome-message">
+      <p>Bem-vindo(a) ao formulário da Renova Be Assinaturas. São 10 perguntas rápidas para entendermos melhor suas necessidades e melhorar nossos serviços.</p>
+      <p>Sua opinião faz a diferença. Vamos começar?</p>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Pergunta 1 -->
+    <div class="question active" data-question="1">
+      <h3>1. Nome *</h3>
+      <input type="text" class="text-input" placeholder="Digite seu nome completo">
+    </div>
+
+    <!-- Pergunta 2 -->
+    <div class="question" data-question="2">
+      <h3>2. Email *</h3>
+      <input type="email" class="text-input" placeholder="seu@email.com">
+    </div>
+
+    <!-- Pergunta 3 -->
+    <div class="question" data-question="3">
+      <h3>3. Confirmação Whatsapp *</h3>
+      <input type="tel" class="text-input" placeholder="(00) 00000-0000">
+    </div>
+
+    <!-- Pergunta 4 -->
+    <div class="question" data-question="4">
+      <h3>4. Qual é o seu gênero? *</h3>
+      <div class="options">
+        <div class="option" data-value="Feminino">
+          <div class="option-number">1</div>
+          <span>Feminino</span>
+        </div>
+        <div class="option" data-value="Masculino">
+          <div class="option-number">2</div>
+          <span>Masculino</span>
+        </div>
+        <div class="option" data-value="Prefiro não dizer">
+          <div class="option-number">3</div>
+          <span>Prefiro não dizer</span>
+        </div>
+        <div class="option" data-value="Outros">
+          <div class="option-number">4</div>
+          <span>Outros</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pergunta 5 -->
+    <div class="question" data-question="5">
+      <h3>5. Qual é sua faixa etária? *</h3>
+      <div class="options">
+        <div class="option" data-value="Entre 18-30 anos">
+          <div class="option-number">1</div>
+          <span>Entre 18-30 anos</span>
+        </div>
+        <div class="option" data-value="Entre 30-40 anos">
+          <div class="option-number">2</div>
+          <span>Entre 30-40 anos</span>
+        </div>
+        <div class="option" data-value="Entre 40-50 anos">
+          <div class="option-number">3</div>
+          <span>Entre 40-50 anos</span>
+        </div>
+        <div class="option" data-value="Acima de 50 anos">
+          <div class="option-number">4</div>
+          <span>Acima de 50 anos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pergunta 6 -->
+    <div class="question" data-question="6">
+      <h3>6. Em quais desses perfis você se enquadra atualmente? *</h3>
+      <div class="options">
+        <div class="option" data-value="Cônjuge acompanhado a rotina do(a) parceiro(a)">
+          <div class="option-number">1</div>
+          <span>Cônjuge acompanhado a rotina do(a) parceiro(a)</span>
+        </div>
+        <div class="option" data-value="Buscando redução das marcas de envelhecimento">
+          <div class="option-number">2</div>
+          <span>Buscando redução das marcas de envelhecimento</span>
+        </div>
+        <div class="option" data-value="Em busca de mais saúde e autocuidado">
+          <div class="option-number">3</div>
+          <span>Em busca de mais saúde e autocuidado</span>
+        </div>
+        <div class="option" data-value="Executiva/ Empresária/ Líder com rotina cheia de compromissos">
+          <div class="option-number">4</div>
+          <span>Executiva/ Empresária/ Líder com rotina cheia de compromissos</span>
+        </div>
+        <div class="option" data-value="Gestante que pratica exercícios regularmente">
+          <div class="option-number">5</div>
+          <span>Gestante que pratica exercícios regularmente</span>
+        </div>
+        <div class="option" data-value="Praticante de exercícios físicos diariamente">
+          <div class="option-number">6</div>
+          <span>Praticante de exercícios físicos diariamente</span>
+        </div>
+        <div class="option" data-value="Trabalhador(a) preocupado(a) com o autocuidado">
+          <div class="option-number">7</div>
+          <span>Trabalhador(a) preocupado(a) com o autocuidado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pergunta 7 -->
+    <div class="question" data-question="7">
+      <h3>7. Quais produtos você mais se interessa na Renova Be *</h3>
+      <div class="options">
+        <div class="option" data-value="Colágeno Verisol® Frutado">
+          <div class="option-number">1</div>
+          <span>Colágeno Verisol® Frutado</span>
+        </div>
+        <div class="option" data-value="Colágeno Verisol® Chocolate">
+          <div class="option-number">2</div>
+          <span>Colágeno Verisol® Chocolate</span>
+        </div>
+        <div class="option" data-value="Colágeno Lac & Gest">
+          <div class="option-number">3</div>
+          <span>Colágeno Lac & Gest</span>
+        </div>
+        <div class="option" data-value="Colágeno Tipo 2">
+          <div class="option-number">4</div>
+          <span>Colágeno Tipo 2</span>
+        </div>
+        <div class="option" data-value="Creatina + Morning Shot">
+          <div class="option-number">5</div>
+          <span>Creatina + Morning Shot</span>
+        </div>
+        <div class="option" data-value="Creme Alívio Flex">
+          <div class="option-number">6</div>
+          <span>Creme Alívio Flex</span>
+        </div>
+        <div class="option" data-value="Creme Resveratrol">
+          <div class="option-number">7</div>
+          <span>Creme Resveratrol</span>
+        </div>
+        <div class="option" data-value="Creme Retinol">
+          <div class="option-number">8</div>
+          <span>Creme Retinol</span>
+        </div>
+        <div class="option" data-value="Espuma de Limpeza Facial">
+          <div class="option-number">9</div>
+          <span>Espuma de Limpeza Facial</span>
+        </div>
+        <div class="option" data-value="Hidratante Labial">
+          <div class="option-number">10</div>
+          <span>Hidratante Labial</span>
+        </div>
+        <div class="option" data-value="Máscara de Argila">
+          <div class="option-number">11</div>
+          <span>Máscara de Argila</span>
+        </div>
+        <div class="option" data-value="Melatonina">
+          <div class="option-number">12</div>
+          <span>Melatonina</span>
+        </div>
+        <div class="option" data-value="Multivitamínico">
+          <div class="option-number">13</div>
+          <span>Multivitamínico</span>
+        </div>
+        <div class="option" data-value="Ômega 3">
+          <div class="option-number">14</div>
+          <span>Ômega 3</span>
+        </div>
+        <div class="option" data-value="Sérum Facial">
+          <div class="option-number">15</div>
+          <span>Sérum Facial</span>
+        </div>
+        <div class="option" data-value="Whey Protein">
+          <div class="option-number">16</div>
+          <span>Whey Protein</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pergunta 8 -->
+    <div class="question" data-question="8">
+      <h3>8. Quais foram os motivos que fizeram você cancelar sua assinatura da Renova Be? *</h3>
+      <div class="options">
+        <div class="option" data-value="Atraso no envio dos produtos">
+          <div class="option-number">1</div>
+          <span>Atraso no envio dos produtos</span>
+        </div>
+        <div class="option" data-value="Avarias nas embalagens">
+          <div class="option-number">2</div>
+          <span>Avarias nas embalagens</span>
+        </div>
+        <div class="option" data-value="Falta de atendimento do suporte">
+          <div class="option-number">3</div>
+          <span>Falta de atendimento do suporte</span>
+        </div>
+        <div class="option" data-value="Falta de outras opções de pagamento">
+          <div class="option-number">4</div>
+          <span>Falta de outras opções de pagamento</span>
+        </div>
+        <div class="option" data-value="Falta de possibilidade de escolher sabores">
+          <div class="option-number">5</div>
+          <span>Falta de possibilidade de escolher sabores</span>
+        </div>
+        <div class="option" data-value="Informações incorretas/ incompletas">
+          <div class="option-number">6</div>
+          <span>Informações incorretas/ incompletas</span>
+        </div>
+        <div class="option" data-value="Possuia mais de uma assinatura">
+          <div class="option-number">7</div>
+          <span>Possuia mais de uma assinatura</span>
+        </div>
+        <div class="option" data-value="Quantidade insuficiente para o mês">
+          <div class="option-number">8</div>
+          <span>Quantidade insuficiente para o mês</span>
+        </div>
+        <div class="option" data-value="Uso do limite do cartão de crédito">
+          <div class="option-number">9</div>
+          <span>Uso do limite do cartão de crédito</span>
+        </div>
+        <div class="option" data-value="Valor da assinatura muito alto">
+          <div class="option-number">10</div>
+          <span>Valor da assinatura muito alto</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pergunta 9 -->
+    <div class="question" data-question="9">
+      <h3>9. Quais sugestões você recomendaria à Renova Be que faria você repensar em retomar sua assinatura? *</h3>
+      <textarea class="text-input" rows="4" placeholder="Digite suas sugestões aqui..."></textarea>
+    </div>
+
+    <!-- Pergunta 10 -->
+    <div class="question" data-question="10">
+      <h3>10. Em uma escala de 1 a 5, o quanto você recomendaria a Renova Be para seus familiares e amigos? *</h3>
+      <div class="options">
+        <div class="option" data-value="1 - Não recomendaria">
+          <div class="option-number">1</div>
+          <span>1 - Não recomendaria</span>
+        </div>
+        <div class="option" data-value="2 - Pouco provável">
+          <div class="option-number">2</div>
+          <span>2 - Pouco provável</span>
+        </div>
+        <div class="option" data-value="3 - Talvez">
+          <div class="option-number">3</div>
+          <span>3 - Talvez</span>
+        </div>
+        <div class="option" data-value="4 - Provavelmente">
+          <div class="option-number">4</div>
+          <span>4 - Provavelmente</span>
+        </div>
+        <div class="option" data-value="5 - Definitivamente">
+          <div class="option-number">5</div>
+          <span>5 - Definitivamente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agradecimento -->
+    <div class="thank-you" id="thankYou">
+      <h2>Obrigado pela sua participação! 🎉</h2>
+      <p>Sua opinião é muito importante para nós. Entraremos em contato em breve!</p>
+    </div>
+
+    <div class="navigation">
+      <button class="btn btn-prev" id="prevBtn" onclick="previousQuestion()">Anterior</button>
+      <button class="btn btn-next" id="nextBtn" onclick="nextQuestion()">Próximo</button>
+    </div>
+  </div>
+
+  <script>
+    let currentQuestion = 1;
+    const totalQuestions = 10;
+    const answers = {};
+
+    // Inicializar rastreamento da primeira pergunta
+    window.onload = function() {
+      trackQuestionProgress(1, "Nome");
+      updateProgress();
+    };
+
+    function updateProgress() {
+      const progress = (currentQuestion / totalQuestions) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+    }
+
+    function showQuestion(questionNumber) {
+      // Esconder todas as perguntas
+      document.querySelectorAll('.question').forEach(q => {
+        q.classList.remove('active');
+      });
+
+      // Mostrar pergunta atual
+      const question = document.querySelector(`[data-question="${questionNumber}"]`);
+      if (question) {
+        question.classList.add('active');
+      }
+
+      // Atualizar botões
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+
+      prevBtn.style.display = questionNumber === 1 ? 'none' : 'block';
+      nextBtn.textContent = questionNumber === totalQuestions ? 'Enviar' : 'Próximo';
+
+      updateProgress();
+    }
+
+    function getQuestionText(questionNumber) {
+      const questionMap = {
+        1: "Nome",
+        2: "Email",
+        3: "Confirmação Whatsapp",
+        4: "Qual é o seu gênero?",
+        5: "Qual é sua faixa etária?",
+        6: "Em quais desses perfis você se enquadra atualmente?",
+        7: "Quais produtos você mais se interessa na Renova Be",
+        8: "Quais foram os motivos que fizeram você cancelar sua assinatura da Renova Be?",
+        9: "Quais sugestões você recomendaria à Renova Be que faria você repensar em retomar sua assinatura?",
+        10: "Em uma escala de 1 a 5, o quanto você recomendaria a Renova Be para seus familiares e amigos?"
+      };
+      return questionMap[questionNumber] || "";
+    }
+
+    function getCurrentAnswer() {
+      const currentQuestionEl = document.querySelector(`[data-question="${currentQuestion}"]`);
+      
+      if (currentQuestionEl.querySelector('.text-input')) {
+        return currentQuestionEl.querySelector('.text-input').value;
+      } else if (currentQuestionEl.querySelector('textarea')) {
+        return currentQuestionEl.querySelector('textarea').value;
+      } else {
+        const selectedOption = currentQuestionEl.querySelector('.option.selected');
+        return selectedOption ? selectedOption.dataset.value : null;
+      }
+    }
+
+    function nextQuestion() {
+      const currentAnswer = getCurrentAnswer();
+      
+      if (currentAnswer) {
+        answers[`question_${currentQuestion}`] = {
+          question: getQuestionText(currentQuestion),
+          answer: currentAnswer
+        };
+
+        // Rastrear resposta no Analytics
+        gtag('event', 'form_resposta_enviada', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          resposta: currentAnswer,
+          session_id: formData.sessionId
+        });
+
+        // Enviar para Google Sheets
+        formData.answers[`question_${currentQuestion}`] = {
+          question: getQuestionText(currentQuestion),
+          answer: currentAnswer
+        };
+        sendToGoogleSheets(formData);
+      }
+
+      if (currentQuestion < totalQuestions) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+        
+        // Rastrear nova pergunta
+        trackQuestionProgress(currentQuestion, getQuestionText(currentQuestion));
+      } else {
+        // Formulário completo
+        gtag('event', 'form_completado', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          session_id: formData.sessionId,
+          total_perguntas: totalQuestions
+        });
+
+        // Enviar dados finais para Google Sheets
+        formData.answers = answers;
+        sendToGoogleSheets(formData);
+
+        // Mostrar agradecimento
+        document.querySelector('.form-container').style.display = 'none';
+        document.getElementById('thankYou').style.display = 'block';
+      }
+    }
+
+    function previousQuestion() {
+      if (currentQuestion > 1) {
+        currentQuestion--;
+        showQuestion(currentQuestion);
+        
+        // Rastrear retorno à pergunta
+        trackQuestionProgress(currentQuestion, getQuestionText(currentQuestion));
+      }
+    }
+
+    // Event listeners para opções
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('option')) {
+        // Remover seleção anterior
+        e.target.parentElement.querySelectorAll('.option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        
+        // Selecionar nova opção
+        e.target.classList.add('selected');
+      }
+    });
+
+    // Event listeners para inputs
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('text-input')) {
+        // Rastrear digitação em tempo real
+        gtag('event', 'form_digitacao', {
+          form_name: 'PESQUISA_RENOVA_BE',
+          pergunta_numero: currentQuestion,
+          pergunta_texto: getQuestionText(currentQuestion),
+          session_id: formData.sessionId
+        });
+      }
+    });
+
+    // Rastrear saída da página
+    window.addEventListener('beforeunload', function() {
+      gtag('event', 'form_abandonado', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        pergunta_atual: currentQuestion,
+        pergunta_texto: getQuestionText(currentQuestion),
+        session_id: formData.sessionId
+      });
+    });
+  </script>
+</body>
+</html> 
