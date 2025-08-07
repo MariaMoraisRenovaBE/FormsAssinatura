@@ -91,27 +91,7 @@
       }, 3000);
     }
 
-    function trackQuestionProgress(questionNumber, questionText, answer = null) {
-      formData.currentQuestion = questionNumber;
-      formData.timestamp = new Date().toISOString();
-      
-      if (answer) {
-        formData.answers[`question_${questionNumber}`] = {
-          question: questionText,
-          answer: answer
-        };
-      }
-
-      // Apenas rastrear no Google Analytics (sem enviar para Sheets)
-      gtag('event', 'form_pergunta_iniciada', {
-        form_name: 'PESQUISA_RENOVA_BE',
-        pergunta_numero: questionNumber,
-        pergunta_texto: questionText,
-        session_id: formData.sessionId
-      });
-
-      console.log(`🔔 Pergunta ${questionNumber} rastreada:`, questionText);
-    }
+    // Função removida - não envia dados durante o preenchimento
 
     window.onload = () => {
       // Evento: formulário aberto
@@ -623,7 +603,13 @@
 
     // Inicializar rastreamento da primeira pergunta
     window.onload = function() {
-      trackQuestionProgress(1, "Nome");
+      // Apenas rastrear no Google Analytics (sem enviar dados)
+      gtag('event', 'form_pergunta_iniciada', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        pergunta_numero: 1,
+        pergunta_texto: "Nome",
+        session_id: formData.sessionId
+      });
       updateProgress();
     };
 
