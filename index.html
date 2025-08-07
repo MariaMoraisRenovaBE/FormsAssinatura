@@ -14,6 +14,9 @@
     gtag('js', new Date());
     gtag('config', 'G-WG5TKP744Z');
 
+    // Configuração do Google Sheets com solução alternativa
+    const GOOGLE_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwGxxQ3023wCbkfXIA2SxUdQic0ix4xXaZgqa1jpKfEVB0UdUOgSCmbs2Jyj2zuo3oGxw/exec';
+    
     // Dados do formulário
     let formData = {
       timestamp: '',
@@ -26,48 +29,32 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Solução alternativa usando formulário HTML tradicional
+    // Solução alternativa usando XMLHttpRequest
     function sendToGoogleSheets(data) {
       console.log('🔄 Enviando dados para Google Sheets:', data);
       
-      // Verificar se há dados válidos para enviar
-      if (!data.answers || Object.keys(data.answers).length === 0) {
-        console.log('⚠️ Nenhum dado válido para enviar');
-        return;
-      }
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(data));
       
-      // Criar um formulário temporário
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'https://script.google.com/macros/s/AKfycbwGxxQ3023wCbkfXIA2SxUdQic0ix4xXaZgqa1jpKfEVB0UdUOgSCmbs2Jyj2zuo3oGxw/exec';
-      form.target = 'hidden-iframe';
-      form.style.display = 'none';
+      xhr.open('POST', GOOGLE_SHEETS_URL, true);
       
-      // Adicionar dados como campo hidden
-      const dataInput = document.createElement('input');
-      dataInput.type = 'hidden';
-      dataInput.name = 'data';
-      dataInput.value = JSON.stringify(data);
-      form.appendChild(dataInput);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          console.log('✅ Dados enviados para Google Sheets:', xhr.responseText);
+          showNotification('Dados enviados com sucesso!', 'success');
+        } else {
+          console.error('❌ Erro ao enviar dados:', xhr.status, xhr.responseText);
+          showNotification('Erro ao enviar dados. Status: ' + xhr.status, 'error');
+        }
+      };
       
-      // Adicionar formulário ao DOM
-      document.body.appendChild(form);
+      xhr.onerror = function() {
+        console.error('❌ Erro de rede ao enviar dados');
+        showNotification('Erro de rede ao enviar dados.', 'error');
+      };
       
-      // Criar iframe oculto para receber resposta
-      const iframe = document.createElement('iframe');
-      iframe.name = 'hidden-iframe';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-      
-      // Enviar formulário
-      form.submit();
-      
-      // Limpar formulário após envio
-      setTimeout(() => {
-        document.body.removeChild(form);
-        document.body.removeChild(iframe);
-        showNotification('Dados enviados com sucesso!', 'success');
-      }, 1000);
+      xhr.send(formData);
     }
 
     function showNotification(message, type) {
