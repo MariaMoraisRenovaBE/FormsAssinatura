@@ -37,19 +37,7 @@
         return;
       }
       
-      // Verificar se todos os campos obrigatórios estão preenchidos
-      const requiredFields = ['question_1', 'question_2', 'question_3', 'question_4', 'question_5', 
-                            'question_6', 'question_7', 'question_8', 'question_9', 'question_10'];
-      
-      const missingFields = requiredFields.filter(field => !data.answers[field] || !data.answers[field].answer);
-      
-      if (missingFields.length > 0) {
-        console.error('❌ Campos faltando:', missingFields);
-        showNotification('Erro: Campos obrigatórios não preenchidos', 'error');
-        return;
-      }
-      
-      console.log('✅ Todos os campos obrigatórios preenchidos');
+      console.log('✅ Dados válidos encontrados, enviando...');
       
       // MÉTODO PRINCIPAL - Formulário com iframe (funciona em mobile)
       try {
