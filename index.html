@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>Pesquisa Renova Be </title>
+  <title>Pesquisa Renova Be</title>
 
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-WG5TKP744Z"></script>
@@ -26,36 +26,18 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Função DEBUG para enviar dados completos
+    // Função corrigida para enviar dados completos - FUNCIONA NO MOBILE
     function sendToGoogleSheets(data) {
-      console.log('🔄 DEBUG: Iniciando envio de dados...');
-      console.log('📊 Dados completos:', JSON.stringify(data, null, 2));
+      console.log('🔄 Enviando dados para Google Sheets:', data);
       
       // Verificar se há dados válidos para enviar
       if (!data.answers || Object.keys(data.answers).length === 0) {
-        console.error('❌ DEBUG: Nenhum dado válido para enviar');
-        showNotification('Erro: Nenhum dado para enviar', 'error');
+        console.log('⚠️ Nenhum dado válido para enviar');
         return;
       }
-      
-      // Verificar se todos os campos obrigatórios estão preenchidos
-      const requiredFields = ['question_1', 'question_2', 'question_3', 'question_4', 'question_5', 
-                            'question_6', 'question_7', 'question_8', 'question_9', 'question_10'];
-      
-      const missingFields = requiredFields.filter(field => !data.answers[field] || !data.answers[field].answer);
-      
-      if (missingFields.length > 0) {
-        console.error('❌ DEBUG: Campos faltando:', missingFields);
-        showNotification('Erro: Campos obrigatórios não preenchidos', 'error');
-        return;
-      }
-      
-      console.log('✅ DEBUG: Todos os campos obrigatórios preenchidos');
       
       // Método que funciona tanto no desktop quanto no mobile
       try {
-        console.log('🔄 DEBUG: Criando formulário temporário...');
-        
         // Criar um formulário temporário
         const form = document.createElement('form');
         form.method = 'POST';
@@ -70,8 +52,6 @@
         dataInput.value = JSON.stringify(data);
         form.appendChild(dataInput);
         
-        console.log('📤 DEBUG: Dados JSON preparados:', dataInput.value);
-        
         // Adicionar formulário ao DOM
         document.body.appendChild(form);
         
@@ -81,32 +61,24 @@
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
         
-        console.log('🚀 DEBUG: Enviando formulário...');
-        
         // Enviar formulário
         form.submit();
-        
-        console.log('✅ DEBUG: Formulário enviado com sucesso');
         
         // Limpar formulário após envio
         setTimeout(() => {
           if (document.body.contains(form)) {
             document.body.removeChild(form);
-            console.log('🧹 DEBUG: Formulário removido do DOM');
           }
           if (document.body.contains(iframe)) {
             document.body.removeChild(iframe);
-            console.log('🧹 DEBUG: Iframe removido do DOM');
           }
-          showNotification('Dados enviados com sucesso! Verifique a planilha.', 'success');
-        }, 5000); // Aumentado para 5 segundos
+          showNotification('Dados enviados com sucesso!', 'success');
+        }, 3000); // Aumentado para mobile
         
       } catch (error) {
-        console.error('❌ DEBUG: Erro ao enviar dados:', error);
+        console.error('❌ Erro ao enviar dados:', error);
         
         // Fallback para mobile - tentar com XMLHttpRequest
-        console.log('🔄 DEBUG: Tentando fallback XMLHttpRequest...');
-        
         try {
           const xhr = new XMLHttpRequest();
           xhr.open('POST', 'https://script.google.com/macros/s/AKfycbzLr75Ftl7WXQPF2TZu8g3WN9ij1pcCxsMtwMEFtHXlvW-l0BF-NfC569nP-DvE4JLN/exec', true);
@@ -116,23 +88,21 @@
           formData.append('data', JSON.stringify(data));
           
           xhr.onload = function() {
-            console.log('📥 DEBUG: Resposta XMLHttpRequest:', xhr.responseText);
             if (xhr.status === 200) {
-              showNotification('Dados enviados com sucesso! (XMLHttpRequest)', 'success');
+              showNotification('Dados enviados com sucesso!', 'success');
             } else {
-              showNotification('Erro ao enviar dados. Status: ' + xhr.status, 'error');
+              showNotification('Erro ao enviar dados. Tente novamente.', 'error');
             }
           };
           
           xhr.onerror = function() {
-            console.error('❌ DEBUG: Erro XMLHttpRequest');
             showNotification('Erro de conexão. Tente novamente.', 'error');
           };
           
           xhr.send(formData);
           
         } catch (fallbackError) {
-          console.error('❌ DEBUG: Erro no fallback:', fallbackError);
+          console.error('❌ Erro no fallback:', fallbackError);
           showNotification('Erro ao enviar dados. Tente novamente.', 'error');
         }
       }
@@ -163,7 +133,7 @@
         if (document.body.contains(notification)) {
           notification.remove();
         }
-      }, 8000); // Aumentado para 8 segundos
+      }, 5000);
     }
 
     window.onload = () => {
@@ -179,7 +149,7 @@
         session_id: formData.sessionId
       });
 
-      console.log('📊 DEBUG: Formulário carregado e rastreamento ativo');
+      console.log('📊 Formulário carregado e rastreamento ativo');
     };
   </script>
 
@@ -521,7 +491,7 @@
     <img src="https://i.ibb.co/chSdvTzv/Captura-de-tela-2025-08-07-092118.png" alt="Renova Be" />
   </header>
 
-  <h1>Pesquisa de Satisfação Assinaturas Renova Be </h1>
+  <h1>Pesquisa de Satisfação Assinaturas Renova Be</h1>
 
   <div class="form-container">
     <div class="welcome-message">
@@ -872,15 +842,11 @@
     function nextQuestion() {
       const currentAnswer = getCurrentAnswer();
       
-      console.log(`🔍 DEBUG: Pergunta ${currentQuestion} - Resposta:`, currentAnswer);
-      
       if (currentAnswer) {
         answers[`question_${currentQuestion}`] = {
           question: getQuestionText(currentQuestion),
           answer: currentAnswer
         };
-
-        console.log(`✅ DEBUG: Resposta salva para pergunta ${currentQuestion}`);
 
         // Rastrear resposta no Analytics
         gtag('event', 'form_resposta_enviada', {
@@ -896,8 +862,6 @@
           question: getQuestionText(currentQuestion),
           answer: currentAnswer
         };
-      } else {
-        console.warn(`⚠️ DEBUG: Pergunta ${currentQuestion} sem resposta`);
       }
 
       if (currentQuestion < totalQuestions) {
@@ -913,9 +877,6 @@
         });
       } else {
         // Formulário completo - ENVIAR DADOS COMPLETOS
-        console.log('🎯 DEBUG: Formulário completo! Enviando dados...');
-        console.log('📊 DEBUG: Todas as respostas:', answers);
-        
         gtag('event', 'form_completado', {
           form_name: 'PESQUISA_RENOVA_BE',
           session_id: formData.sessionId,
@@ -927,7 +888,7 @@
         formData.currentQuestion = totalQuestions;
         formData.timestamp = new Date().toISOString();
         
-        console.log('📤 DEBUG: Enviando dados completos:', formData);
+        console.log('📤 Enviando dados completos:', formData);
         sendToGoogleSheets(formData);
 
         // Mostrar agradecimento
@@ -961,14 +922,12 @@
         
         // Selecionar nova opção
         e.target.classList.add('selected');
-        console.log('✅ DEBUG: Opção selecionada:', e.target.dataset.value);
       }
     });
 
     // Event listeners para inputs
     document.addEventListener('input', function(e) {
       if (e.target.classList.contains('text-input')) {
-        console.log('📝 DEBUG: Input digitado:', e.target.value);
         // Rastrear digitação em tempo real
         gtag('event', 'form_digitacao', {
           form_name: 'PESQUISA_RENOVA_BE',
@@ -991,4 +950,3 @@
   </script>
 </body>
 </html> 
-
