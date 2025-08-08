@@ -26,57 +26,93 @@
       return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
-    // Função para enviar dados via iframe (funciona no mobile)
+    // Função robusta para enviar dados (com fallbacks para mobile)
     function sendToGoogleSheets(data) {
+      const url = 'https://script.google.com/macros/s/AKfycbwEZGA5KUASWTEOT3-waTlweiKdeG2EPRftFM-FPxObArTMeVnnlTMoWkg_5HwRl1iilA/exec';
+      const json = JSON.stringify(data);
+
       console.log('🔄 Enviando dados para Google Sheets:', data);
-      
+
+      // 1) Tenta sendBeacon (melhor para mobile/background)
       try {
-        // Criar formulário temporário
+        if (navigator.sendBeacon) {
+          const ok = navigator.sendBeacon(url, new Blob([json], { type: 'application/json' }));
+          if (ok) {
+            console.log('✅ Enviado via sendBeacon');
+            showNotification('Dados salvos com sucesso!', 'success');
+            setTimeout(showThankYou, 1500);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('sendBeacon falhou:', e);
+      }
+
+      // 2) Tenta fetch com keepalive (não bloqueia ao sair da página)
+      try {
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: json,
+          keepalive: true,    // chave para mobile
+          // IMPORTANTE: não use 'cors' + leia resposta; Apps Script aceita e nós não precisamos ler a resposta
+          mode: 'no-cors'     // evita CORS chato; requisição chega lá, só não teremos response legível
+        }).then(() => {
+          console.log('✅ Enviado via fetch keepalive');
+          showNotification('Dados salvos com sucesso!', 'success');
+          setTimeout(showThankYou, 1500);
+        }).catch(err => {
+          console.warn('fetch falhou, caindo no fallback:', err);
+          iframeFallback(json, url);
+        });
+        return;
+      } catch (e) {
+        console.warn('fetch lançou exceção, caindo no fallback:', e);
+      }
+
+      // 3) Fallback: form + iframe (último recurso)
+      iframeFallback(json, url);
+    }
+
+    function iframeFallback(json, url) {
+      try {
+        console.log('↩️ Fallback: form + iframe');
+
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = 'https://script.google.com/macros/s/AKfycbwEZGA5KUASWTEOT3-waTlweiKdeG2EPRftFM-FPxObArTMeVnnlTMoWkg_5HwRl1iilA/exec';
+        form.action = url;
         form.target = 'hidden-iframe';
         form.style.display = 'none';
-        
-        // Adicionar dados como campo hidden
+
+        // Campo "data" como application/x-www-form-urlencoded
         const dataInput = document.createElement('input');
         dataInput.type = 'hidden';
         dataInput.name = 'data';
-        dataInput.value = JSON.stringify(data);
+        dataInput.value = json;
         form.appendChild(dataInput);
-        
-        // Adicionar formulário ao DOM
+
+        // Garante que o iframe exista antes do submit
+        let iframe = document.querySelector('iframe[name="hidden-iframe"]');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.name = 'hidden-iframe';
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+        }
+
         document.body.appendChild(form);
-        
-        // Criar iframe oculto para receber resposta
-        const iframe = document.createElement('iframe');
-        iframe.name = 'hidden-iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        
-        // Enviar formulário
         form.submit();
-        
+
         console.log('✅ Formulário enviado via iframe');
         showNotification('Dados salvos com sucesso!', 'success');
-        
-        // Mostrar agradecimento após sucesso
-        setTimeout(() => {
-          showThankYou();
-        }, 2000);
+        setTimeout(showThankYou, 1500);
 
-        // Limpar formulário após envio
         setTimeout(() => {
-          if (document.body.contains(form)) {
-            document.body.removeChild(form);
-          }
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
+          form.remove();
+          // não precisa remover o iframe se você quiser reutilizar em outros envios
         }, 8000);
-        
       } catch (error) {
-        console.error('❌ Erro no envio:', error);
+        console.error('❌ Erro no fallback iframe:', error);
         showNotification('Erro ao enviar dados. Tente novamente.', 'error');
       }
     }
