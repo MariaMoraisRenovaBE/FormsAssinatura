@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste Mobile Final</title>
+    <title>Debug Apps Script</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,85 +46,111 @@
     </style>
 </head>
 <body>
-    <h1>🧪 Teste Mobile Final - Diagnóstico</h1>
+    <h1>🔧 Debug Apps Script</h1>
     
     <div class="test-section">
-        <h2>📱 Informações do Dispositivo</h2>
-        <div id="deviceInfo" class="result info"></div>
+        <h2>📊 Status do Apps Script</h2>
+        <button class="btn" onclick="checkAppsScriptStatus()">Verificar Status</button>
+        <div id="statusResult" class="result"></div>
     </div>
 
     <div class="test-section">
-        <h2>🔗 Teste de Conexão</h2>
-        <button class="btn" onclick="testConnection()">Testar Conexão GET</button>
-        <div id="connectionResult" class="result"></div>
+        <h2>📤 Teste Simples - POST Direto</h2>
+        <button class="btn" onclick="testSimplePost()">Enviar POST Simples</button>
+        <div id="simplePostResult" class="result"></div>
     </div>
 
     <div class="test-section">
-        <h2>📤 Teste de Envio - IFRAME</h2>
-        <button class="btn" onclick="testIframeSubmission()">Testar Envio IFRAME</button>
+        <h2>📤 Teste IFRAME - Com Resposta</h2>
+        <button class="btn" onclick="testIframeWithResponse()">Enviar IFRAME com Resposta</button>
         <div id="iframeResult" class="result"></div>
     </div>
 
     <div class="test-section">
-        <h2>📊 Dados de Teste</h2>
-        <div id="testData" class="result info"></div>
+        <h2>📋 Logs do Apps Script</h2>
+        <p>Para verificar os logs:</p>
+        <ol>
+            <li>Vá para <a href="https://script.google.com" target="_blank">script.google.com</a></li>
+            <li>Abra o projeto do formulário</li>
+            <li>Clique em "Registo de execução"</li>
+            <li>Procure por logs que começam com "📥"</li>
+        </ol>
     </div>
 
     <script>
-        // Informações do dispositivo
-        function showDeviceInfo() {
-            const info = {
-                userAgent: navigator.userAgent,
-                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-                platform: navigator.platform,
-                language: navigator.language,
-                cookieEnabled: navigator.cookieEnabled,
-                onLine: navigator.onLine,
-                timestamp: new Date().toISOString()
-            };
-            
-            document.getElementById('deviceInfo').textContent = JSON.stringify(info, null, 2);
-        }
-
-        // Teste de conexão GET
-        async function testConnection() {
-            const resultDiv = document.getElementById('connectionResult');
-            resultDiv.textContent = '🔄 Testando conexão...';
+        // Verificar status do Apps Script
+        async function checkAppsScriptStatus() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.textContent = '🔄 Verificando status...';
             resultDiv.className = 'result info';
             
             try {
                 const response = await fetch('https://script.google.com/macros/s/AKfycbxa2qInGxGK94wzcdHUcqv4lRvRr1QqXUHHtQk_PeHA-nk8Vx4GMBfwNCBVbJh80XSH8Q/exec');
                 const text = await response.text();
                 
-                resultDiv.textContent = `✅ Conexão OK!\n\nResposta:\n${text}`;
+                resultDiv.textContent = `✅ Apps Script está ativo!\n\nResposta:\n${text}`;
                 resultDiv.className = 'result success';
             } catch (error) {
-                resultDiv.textContent = `❌ Erro na conexão:\n${error.toString()}`;
+                resultDiv.textContent = `❌ Erro ao conectar:\n${error.toString()}`;
                 resultDiv.className = 'result error';
             }
         }
 
-        // Teste de envio via iframe
-        function testIframeSubmission() {
-            const resultDiv = document.getElementById('iframeResult');
-            resultDiv.textContent = '🔄 Testando envio via iframe...';
+        // Teste POST simples
+        async function testSimplePost() {
+            const resultDiv = document.getElementById('simplePostResult');
+            resultDiv.textContent = '🔄 Enviando POST simples...';
             resultDiv.className = 'result info';
             
-            // Dados de teste
             const testData = {
-                sessionId: 'mobile_test_' + Date.now(),
+                sessionId: 'simple_test_' + Date.now(),
+                currentQuestion: 1,
+                timestamp: new Date().toISOString(),
+                answers: {
+                    question_1: { question: 'Teste', answer: 'POST Simples' }
+                }
+            };
+            
+            try {
+                const response = await fetch('https://script.google.com/macros/s/AKfycbxa2qInGxGK94wzcdHUcqv4lRvRr1QqXUHHtQk_PeHA-nk8Vx4GMBfwNCBVbJh80XSH8Q/exec', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        data: JSON.stringify(testData)
+                    })
+                });
+                
+                const result = await response.text();
+                resultDiv.textContent = `✅ POST enviado!\n\nResposta:\n${result}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Erro no POST:\n${error.toString()}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // Teste iframe com resposta
+        function testIframeWithResponse() {
+            const resultDiv = document.getElementById('iframeResult');
+            resultDiv.textContent = '🔄 Enviando iframe com resposta...';
+            resultDiv.className = 'result info';
+            
+            const testData = {
+                sessionId: 'iframe_test_' + Date.now(),
                 currentQuestion: 10,
                 timestamp: new Date().toISOString(),
                 answers: {
-                    question_1: { question: 'Nome', answer: 'Teste Mobile Final' },
-                    question_2: { question: 'Email', answer: 'mobile@teste.com' },
+                    question_1: { question: 'Nome', answer: 'Teste Iframe Debug' },
+                    question_2: { question: 'Email', answer: 'iframe@debug.com' },
                     question_3: { question: 'Whatsapp', answer: '(11) 88888-8888' },
                     question_4: { question: 'Gênero', answer: 'Feminino' },
                     question_5: { question: 'Faixa Etária', answer: 'Entre 18-30 anos' },
-                    question_6: { question: 'Perfil', answer: 'Teste Mobile' },
+                    question_6: { question: 'Perfil', answer: 'Teste Debug' },
                     question_7: { question: 'Produtos', answer: 'Colágeno' },
-                    question_8: { question: 'Motivos', answer: 'Teste Mobile' },
-                    question_9: { question: 'Sugestões', answer: 'Teste Mobile' },
+                    question_8: { question: 'Motivos', answer: 'Teste Debug' },
+                    question_9: { question: 'Sugestões', answer: 'Teste Debug' },
                     question_10: { question: 'Recomendação', answer: '5 - Definitivamente' }
                 }
             };
@@ -132,11 +158,11 @@
             console.log('📤 Dados de teste:', testData);
             
             try {
-                // Criar formulário temporário
+                // Criar formulário
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = 'https://script.google.com/macros/s/AKfycbxa2qInGxGK94wzcdHUcqv4lRvRr1QqXUHHtQk_PeHA-nk8Vx4GMBfwNCBVbJh80XSH8Q/exec';
-                form.target = 'test-iframe';
+                form.target = 'debug-iframe';
                 form.style.display = 'none';
                 
                 // Adicionar dados
@@ -149,19 +175,19 @@
                 // Adicionar ao DOM
                 document.body.appendChild(form);
                 
-                // Criar iframe
+                // Criar iframe visível para debug
                 const iframe = document.createElement('iframe');
-                iframe.name = 'test-iframe';
-                iframe.style.display = 'none';
+                iframe.name = 'debug-iframe';
+                iframe.style.cssText = 'width: 100%; height: 200px; border: 1px solid #ccc; margin: 10px 0;';
                 document.body.appendChild(iframe);
                 
                 // Enviar formulário
                 form.submit();
                 
-                resultDiv.textContent = `✅ Formulário enviado via iframe!\n\nDados enviados:\n${JSON.stringify(testData, null, 2)}`;
+                resultDiv.textContent = `✅ Formulário enviado via iframe!\n\nDados enviados:\n${JSON.stringify(testData, null, 2)}\n\nVerifique o iframe abaixo para ver a resposta.`;
                 resultDiv.className = 'result success';
                 
-                // Limpar após 5 segundos
+                // Limpar após 10 segundos
                 setTimeout(() => {
                     if (document.body.contains(form)) {
                         document.body.removeChild(form);
@@ -169,7 +195,7 @@
                     if (document.body.contains(iframe)) {
                         document.body.removeChild(iframe);
                     }
-                }, 5000);
+                }, 10000);
                 
             } catch (error) {
                 resultDiv.textContent = `❌ Erro no envio:\n${error.toString()}`;
@@ -177,33 +203,9 @@
             }
         }
 
-        // Mostrar dados de teste
-        function showTestData() {
-            const testData = {
-                sessionId: 'mobile_test_' + Date.now(),
-                currentQuestion: 10,
-                timestamp: new Date().toISOString(),
-                answers: {
-                    question_1: { question: 'Nome', answer: 'Teste Mobile Final' },
-                    question_2: { question: 'Email', answer: 'mobile@teste.com' },
-                    question_3: { question: 'Whatsapp', answer: '(11) 88888-8888' },
-                    question_4: { question: 'Gênero', answer: 'Feminino' },
-                    question_5: { question: 'Faixa Etária', answer: 'Entre 18-30 anos' },
-                    question_6: { question: 'Perfil', answer: 'Teste Mobile' },
-                    question_7: { question: 'Produtos', answer: 'Colágeno' },
-                    question_8: { question: 'Motivos', answer: 'Teste Mobile' },
-                    question_9: { question: 'Sugestões', answer: 'Teste Mobile' },
-                    question_10: { question: 'Recomendação', answer: '5 - Definitivamente' }
-                }
-            };
-            
-            document.getElementById('testData').textContent = JSON.stringify(testData, null, 2);
-        }
-
         // Inicializar
         window.onload = function() {
-            showDeviceInfo();
-            showTestData();
+            checkAppsScriptStatus();
         };
     </script>
 </body>
