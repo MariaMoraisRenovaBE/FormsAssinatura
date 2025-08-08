@@ -909,16 +909,17 @@
       }
     }
 
-    // Event listeners para opções
+    // Event listeners para opções (CORRIGIDO PARA MOBILE)
     document.addEventListener('click', function(e) {
-      if (e.target.classList.contains('option')) {
+      const clickedOption = e.target.closest('.option');
+      if (clickedOption) {
         // Remover seleção anterior
-        e.target.parentElement.querySelectorAll('.option').forEach(opt => {
+        clickedOption.parentElement.querySelectorAll('.option').forEach(opt => {
           opt.classList.remove('selected');
         });
         
         // Selecionar nova opção
-        e.target.classList.add('selected');
+        clickedOption.classList.add('selected');
       }
     });
 
