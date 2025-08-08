@@ -11,8 +11,8 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
 
-    gtag('js', new Date());
-    gtag('config', 'G-WG5TKP744Z');
+      gtag('js', new Date());
+  gtag('config', 'G-WG5TKP744Z', { debug_mode: true }); // << habilita DebugView
 
     // Dados do formulário
     let formData = {
@@ -162,19 +162,29 @@
       }
     }
 
-    window.onload = () => {
-      // Evento: formulário aberto
+    // Inicialização quando a página carrega (UNIFICADO)
+    window.addEventListener('load', () => {
+      // Eventos iniciais
       gtag('event', 'form_aberto', {
         form_name: 'PESQUISA_RENOVA_BE',
         session_id: formData.sessionId
       });
 
-      // Evento: formulário carregado
       gtag('event', 'form_carregado', {
         form_name: 'PESQUISA_RENOVA_BE',
         session_id: formData.sessionId
       });
-    };
+
+      // Primeira pergunta iniciada
+      gtag('event', 'form_pergunta_iniciada', {
+        form_name: 'PESQUISA_RENOVA_BE',
+        pergunta_numero: 1,
+        pergunta_texto: 'Nome',
+        session_id: formData.sessionId
+      });
+
+      updateProgress();
+    });
   </script>
 
   <style>
@@ -798,16 +808,7 @@
     const totalQuestions = 10;
     const answers = {};
 
-    // Inicializar rastreamento da primeira pergunta
-    window.onload = function() {
-      gtag('event', 'form_pergunta_iniciada', {
-        form_name: 'PESQUISA_RENOVA_BE',
-        pergunta_numero: 1,
-        pergunta_texto: "Nome",
-        session_id: formData.sessionId
-      });
-      updateProgress();
-    };
+    // Inicialização já feita no addEventListener acima
 
     function updateProgress() {
       const progress = (currentQuestion / totalQuestions) * 100;
