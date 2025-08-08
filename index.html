@@ -12,7 +12,11 @@
     function gtag(){ dataLayer.push(arguments); }
 
       gtag('js', new Date());
-  gtag('config', 'G-WG5TKP744Z', { debug_mode: true }); // << habilita DebugView
+  gtag('config', 'G-WG5TKP744Z', { 
+    debug_mode: true,
+    debug_view: true,
+    send_page_view: true
+  }); // << habilita DebugView mais robusto
 
     // Dados do formulário
     let formData = {
@@ -170,6 +174,7 @@
         session_id: formData.sessionId
       };
       console.log('📊 Enviando evento form_aberto:', abertoEvent);
+      console.log('📱 Mobile Debug - Evento sendo enviado...');
       gtag('event', 'form_aberto', abertoEvent);
 
       const carregadoEvent = {
