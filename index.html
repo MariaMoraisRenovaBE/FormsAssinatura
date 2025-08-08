@@ -165,23 +165,29 @@
     // Inicialização quando a página carrega (UNIFICADO)
     window.addEventListener('load', () => {
       // Eventos iniciais
-      gtag('event', 'form_aberto', {
+      const abertoEvent = {
         form_name: 'PESQUISA_RENOVA_BE',
         session_id: formData.sessionId
-      });
+      };
+      console.log('📊 Enviando evento form_aberto:', abertoEvent);
+      gtag('event', 'form_aberto', abertoEvent);
 
-      gtag('event', 'form_carregado', {
+      const carregadoEvent = {
         form_name: 'PESQUISA_RENOVA_BE',
         session_id: formData.sessionId
-      });
+      };
+      console.log('📊 Enviando evento form_carregado:', carregadoEvent);
+      gtag('event', 'form_carregado', carregadoEvent);
 
       // Primeira pergunta iniciada
-      gtag('event', 'form_pergunta_iniciada', {
+      const primeiraPerguntaEvent = {
         form_name: 'PESQUISA_RENOVA_BE',
-        pergunta_numero: 1,
+        pergunta_numero: '1',              // <<< string
         pergunta_texto: 'Nome',
         session_id: formData.sessionId
-      });
+      };
+      console.log('📊 Enviando evento form_pergunta_iniciada (primeira):', primeiraPerguntaEvent);
+      gtag('event', 'form_pergunta_iniciada', primeiraPerguntaEvent);
 
       updateProgress();
     });
@@ -876,13 +882,15 @@
         };
 
         // Rastrear resposta no Analytics
-        gtag('event', 'form_resposta_enviada', {
+        const respostaEvent = {
           form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
+          pergunta_numero: String(currentQuestion),  // <<< garante string
           pergunta_texto: getQuestionText(currentQuestion),
           resposta: currentAnswer,
           session_id: formData.sessionId
-        });
+        };
+        console.log('📊 Enviando evento form_resposta_enviada:', respostaEvent);
+        gtag('event', 'form_resposta_enviada', respostaEvent);
 
         // Atualizar dados do formulário
         formData.answers[`question_${currentQuestion}`] = {
@@ -896,19 +904,23 @@
         showQuestion(currentQuestion);
         
         // Rastrear nova pergunta
-        gtag('event', 'form_pergunta_iniciada', {
+        const perguntaEvent = {
           form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
+          pergunta_numero: String(currentQuestion),  // <<< string
           pergunta_texto: getQuestionText(currentQuestion),
           session_id: formData.sessionId
-        });
+        };
+        console.log('📊 Enviando evento form_pergunta_iniciada:', perguntaEvent);
+        gtag('event', 'form_pergunta_iniciada', perguntaEvent);
       } else {
         // Formulário completo - ENVIAR DADOS COMPLETOS
-        gtag('event', 'form_completado', {
+        const completadoEvent = {
           form_name: 'PESQUISA_RENOVA_BE',
           session_id: formData.sessionId,
           total_perguntas: totalQuestions
-        });
+        };
+        console.log('📊 Enviando evento form_completado:', completadoEvent);
+        gtag('event', 'form_completado', completadoEvent);
 
         // Enviar dados finais completos para Google Sheets
         formData.answers = answers;
@@ -931,12 +943,14 @@
         showQuestion(currentQuestion);
         
         // Rastrear retorno à pergunta
-        gtag('event', 'form_pergunta_iniciada', {
+        const retornoEvent = {
           form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
+          pergunta_numero: String(currentQuestion),  // <<< string
           pergunta_texto: getQuestionText(currentQuestion),
           session_id: formData.sessionId
-        });
+        };
+        console.log('📊 Enviando evento form_pergunta_iniciada (retorno):', retornoEvent);
+        gtag('event', 'form_pergunta_iniciada', retornoEvent);
       }
     }
 
@@ -958,23 +972,27 @@
     document.addEventListener('input', function(e) {
       if (e.target.classList.contains('text-input')) {
         // Rastrear digitação em tempo real
-        gtag('event', 'form_digitacao', {
+        const digitacaoEvent = {
           form_name: 'PESQUISA_RENOVA_BE',
-          pergunta_numero: currentQuestion,
+          pergunta_numero: String(currentQuestion),  // <<< string
           pergunta_texto: getQuestionText(currentQuestion),
           session_id: formData.sessionId
-        });
+        };
+        console.log('📊 Enviando evento form_digitacao:', digitacaoEvent);
+        gtag('event', 'form_digitacao', digitacaoEvent);
       }
     });
 
     // Rastrear saída da página
     window.addEventListener('beforeunload', function() {
-      gtag('event', 'form_abandonado', {
+      const abandonadoEvent = {
         form_name: 'PESQUISA_RENOVA_BE',
-        pergunta_atual: currentQuestion,
+        pergunta_atual: String(currentQuestion),  // <<< string
         pergunta_texto: getQuestionText(currentQuestion),
         session_id: formData.sessionId
-      });
+      };
+      console.log('📊 Enviando evento form_abandonado:', abandonadoEvent);
+      gtag('event', 'form_abandonado', abandonadoEvent);
     });
   </script>
 </body>
